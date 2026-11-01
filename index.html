@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Automotiva Inteligente</title>
+    <!-- Link do Manifesto PWA para gerar o APK -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        cardBg: '#131c2e',
+                        accentGreen: '#10b981',
+                        accentBlue: '#3b82f6',
+                        accentYellow: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between pb-16">
+
+    <!-- Header / Barra Superior -->
+    <header class="bg-cardBg border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-accentGreen text-darkBg p-2 rounded-lg font-bold text-lg">
+                    <i class="fa-solid fa-gas-pump"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight">AutoCalc Pro</h1>
+                    <span id="header-car-info" class="text-xs text-gray-400">Garagem: Gol 1.6</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleProMode()" id="pro-badge" class="bg-gray-800 text-gray-300 border border-gray-700 text-xs px-2.5 py-1 rounded-full font-semibold transition">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i> Free
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal Dinâmico por Abas -->
+    <main class="max-w-md w-full mx-auto p-4 flex-grow">
+
+        <!-- ABA 1: COMPARADOR DE COMBUSTÍVEL -->
+        <section id="tab-combustivel" class="tab-content space-y-4">
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-scale-balanced text-accentGreen mr-1.5"></i> Comparador Inteligente
+                    </h2>
+                    <span id="source-badge" class="text-[10px] bg-blue-900/40 text-blue-400 border border-blue-800/50 px-2 py-0.5 rounded">Fábrica / INMETRO</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Preço Etanol (R$/L)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">R$</span>
+                            <input type="number" id="preco-etanol" step="0.01" placeholder="3.89" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-accentGreen text-base">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Preço Gasolina (R$/L)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">R$</span>
+                            <input type="number" id="preco-gasolina" step="0.01" placeholder="5.79" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-accentGreen text-base">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calcularCombustivel()" class="w-full bg-accentGreen text-darkBg font-bold py-3 rounded-xl shadow-lg hover:bg-emerald-400 transition active:scale-[0.98]">
+                    Calcular Melhor Opção
+                </button>
+            </div>
+
+            <!-- Resultado do Combustível -->
+            <div id="resultado-combustivel" class="hidden bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <div id="card-veredito" class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/50 flex items-center space-x-3">
+                    <div id="veredito-icone" class="bg-accentGreen text-darkBg w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <h3 id="veredito-titulo" class="font-bold text-sm text-emerald-400">Compensa abastecer com Gasolina</h3>
+                        <p id="veredito-sub" class="text-xs text-gray-300">Você economiza aprox. R$ 14,50 neste tanque.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-center pt-2 border-t border-gray-800 text-xs">
+                    <div class="bg-darkBg p-2 rounded-lg border border-gray-800">
+                        <span class="text-gray-400 block">Custo p/ KM (Etanol)</span>
+                        <span id="res-custo-etanol" class="font-bold text-white text-sm">R$ 0,00</span>
+                    </div>
+                    <div class="bg-darkBg p-2 rounded-lg border border-gray-800">
+                        <span class="text-gray-400 block">Custo p/ KM (Gasolina)</span>
+                        <span id="res-custo-gas" class="font-bold text-white text-sm">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: CALCULADORA DE VIAGEM & ROTA -->
+        <section id="tab-viagem" class="tab-content hidden space-y-4">
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                    <i class="fa-solid fa-route text-accentBlue mr-1.5"></i> Custos de Viagem & Rota
+                </h2>
+
+                <div class="flex bg-darkBg p-1 rounded-xl border border-gray-800 text-xs font-semibold mb-2">
+                    <button onclick="mudarModoViagem('manual')" id="btn-modo-manual" class="flex-1 py-2 rounded-lg bg-accentBlue text-white transition">Manual (KM)</button>
+                    <button onclick="mudarModoViagem('gps')" id="btn-modo-gps" class="flex-1 py-2 rounded-lg text-gray-400 transition">GPS / Rota (Online)</button>
+                </div>
+
+                <!-- Campos Modo Manual -->
+                <div id="bloco-manual" class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Distância Ida e Volta (KM)</label>
+                        <input type="number" id="viagem-km" placeholder="Ex: 250" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentBlue text-base">
+                    </div>
+                </div>
+
+                <!-- Campos Modo GPS -->
+                <div id="bloco-gps" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Origem</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="viagem-origem" placeholder="Ex: Porto Alegre, RS" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentBlue text-sm">
+                            <button onclick="usarMinhaLocalizacao()" class="bg-gray-800 border border-gray-700 px-3 rounded-xl text-gray-300 hover:text-white" title="Usar minha localização atual"><i class="fa-solid fa-location-crosshairs"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Destino</label>
+                        <input type="text" id="viagem-destino" placeholder="Ex: Torres, RS" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentBlue text-sm">
+                    </div>
+                    <button onclick="calcularRotaGPS()" class="w-full bg-blue-900/40 text-accentBlue border border-blue-800/50 py-2 rounded-xl text-xs font-semibold hover:bg-blue-900/60 transition">
+                        <i class="fa-solid fa-satellite-dish mr-1"></i> Calcular Distância via Rota
+                    </button>
+                </div>
+
+                <!-- Combustível Utilizado na Viagem -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Combustível para a Viagem</label>
+                    <select id="viagem-combustivel" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentBlue text-sm">
+                        <option value="gasolina">Gasolina</option>
+                        <option value="etanol">Etanol</option>
+                    </select>
+                </div>
+
+                <!-- Pedágio Estimado -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs text-gray-400">Valor Estimado de Pedágios (Ida e Volta)</label>
+                        <label class="text-[10px] text-gray-500 flex items-center cursor-pointer">
+                            <input type="checkbox" id="isento-pedagio" onchange="togglePedagio()" class="mr-1"> Isento / Moto
+                        </label>
+                    </div>
+                    <div class="relative" id="wrapper-pedagio">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">R$</span>
+                        <input type="number" id="viagem-pedagio" step="0.01" placeholder="0.00" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-accentBlue text-base">
+                    </div>
+                </div>
+
+                <button onclick="calcularViagem()" class="w-full bg-accentBlue text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-600 transition active:scale-[0.98]">
+                    Calcular Custo da Viagem
+                </button>
+            </div>
+
+            <!-- Resultado da Viagem -->
+            <div id="resultado-viagem" class="hidden bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-darkBg p-2.5 rounded-xl border border-gray-800">
+                        <span class="text-gray-400 block text-xs">Combustível Gasto</span>
+                        <span id="res-viagem-litros" class="font-bold text-white text-base">0 L</span>
+                    </div>
+                    <div class="bg-darkBg p-2.5 rounded-xl border border-gray-800">
+                        <span class="text-gray-400 block text-xs">Custo Total (Comb + Ped.)</span>
+                        <span id="res-viagem-total" class="font-bold text-accentBlue text-base">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- Divisor de passageiros -->
+                <div class="pt-2 border-t border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-users text-gray-400"></i>
+                        <span class="text-xs text-gray-300">Dividir entre passageiros:</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="mudarPassageiros(-1)" class="bg-gray-800 text-white w-7 h-7 rounded-lg border border-gray-700">-</button>
+                        <span id="num-passageiros" class="font-bold text-sm w-4 text-center">1</span>
+                        <button onclick="mudarPassageiros(1)" class="bg-gray-800 text-white w-7 h-7 rounded-lg border border-gray-700">+</button>
+                    </div>
+                </div>
+                <div class="bg-darkBg p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                    <span class="text-xs text-gray-300">Valor por pessoa:</span>
+                    <span id="res-por-pessoa" class="font-bold text-accentGreen text-lg">R$ 0,00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 3: GARAGEM / CONFIGURAÇÃO DO VEÍCULO -->
+        <section id="tab-garagem" class="tab-content hidden space-y-4">
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg space-y-4">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                    <i class="fa-solid fa-car text-accentYellow mr-1.5"></i> Configurar Meu Veículo
+                </h2>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Selecionar da Base INMETRO / Fábrica</label>
+                    <select id="select-carro-base" onchange="selecionarCarroBase()" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentYellow text-sm">
+                        <option value="">-- Escolha um modelo ou digite abaixo --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Apelido ou Modelo do Veículo</label>
+                    <input type="text" id="car-name" placeholder="Ex: Meu Gol Trend 1.6" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentYellow text-sm">
+                </div>
+
+                <div class="flex bg-darkBg p-1 rounded-xl border border-gray-800 text-xs font-semibold">
+                    <button onclick="mudarModoConsumo('inmetro')" id="btn-cons-inmetro" class="flex-1 py-2 rounded-lg bg-accentYellow text-darkBg transition">Dados Fábrica</button>
+                    <button onclick="mudarModoConsumo('custom')" id="btn-cons-custom" class="flex-1 py-2 rounded-lg text-gray-400 transition">Minha Média Real</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Consumo Etanol (Km/L)</label>
+                        <input type="number" id="car-etanol" step="0.1" placeholder="8.5" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentYellow text-base">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Consumo Gasolina (Km/L)</label>
+                        <input type="number" id="car-gas" step="0.1" placeholder="12.0" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentYellow text-base">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Capacidade do Tanque (Litros)</label>
+                    <input type="number" id="car-tank" placeholder="55" class="w-full bg-darkBg border border-gray-700 rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-accentYellow text-base">
+                </div>
+
+                <button onclick="salvarVeiculo()" class="w-full bg-accentYellow text-darkBg font-bold py-3 rounded-xl shadow-lg hover:bg-amber-400 transition active:scale-[0.98]">
+                    Salvar Veículo na Garagem
+                </button>
+            </div>
+        </section>
+
+        <!-- ABA 4: MONETIZAÇÃO / LOJA PRO -->
+        <section id="tab-pro" class="tab-content hidden space-y-4">
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg text-center space-y-4">
+                <div class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 p-3 rounded-full text-2xl mb-1">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg text-white">Versão Pro & Anúncios</h2>
+                    <p class="text-xs text-gray-400 mt-1">Apoie o desenvolvedor ou assista a um vídeo curto para remover os anúncios temporariamente.</p>
+                </div>
+
+                <div class="bg-darkBg border border-gray-800 p-4 rounded-xl space-y-3 text-left">
+                    <div class="flex items-center space-x-3 text-xs text-gray-300">
+                        <i class="fa-solid fa-check text-accentGreen"></i>
+                        <span>Remoção completa de banners</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs text-gray-300">
+                        <i class="fa-solid fa-check text-accentGreen"></i>
+                        <span>Múltiplos veículos salvos</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs text-gray-300">
+                        <i class="fa-solid fa-check text-accentGreen"></i>
+                        <span>Histórico e exportação de PDF</span>
+                    </div>
+                </div>
+
+                <button onclick="assistirVideoRecompensado()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-darkBg font-bold py-3 rounded-xl shadow-lg hover:opacity-90 transition active:scale-[0.98] text-sm">
+                    <i class="fa-solid fa-clapperboard mr-1"></i> Assistir Vídeo (24h Sem Anúncios)
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AdMob Banner Fixo na Base -->
+    <div id="admob-banner" class="fixed bottom-16 left-0 right-0 max-w-md mx-auto px-4 z-40">
+        <div class="bg-gray-900/90 border border-gray-800 backdrop-blur rounded-lg p-2 flex items-center justify-between shadow-lg">
+            <div class="flex items-center space-x-2">
+                <span class="bg-yellow-500/20 text-yellow-400 text-[9px] px-1.5 py-0.5 rounded font-bold">AD</span>
+                <span class="text-[11px] text-gray-300">Economize até 30% em combustível na sua próxima viagem.</span>
+            </div>
+            <button onclick="fecharBanner(this)" class="text-gray-500 hover:text-gray-300 text-xs px-1"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <!-- Navegação Inferior (Bottom Bar) -->
+    <nav class="bg-cardBg border-t border-gray-800 fixed bottom-0 left-0 right-0 z-50 shadow-lg">
+        <div class="max-w-md mx-auto flex justify-around py-2.5">
+            <button onclick="mudarAba('combustivel')" id="nav-btn-combustivel" class="flex flex-col items-center text-accentGreen transition">
+                <i class="fa-solid fa-gas-pump text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Combustível</span>
+            </button>
+            <button onclick="mudarAba('viagem')" id="nav-btn-viagem" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-route text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Viagem</span>
+            </button>
+            <button onclick="mudarAba('garagem')" id="nav-btn-garagem" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-car text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Garagem</span>
+            </button>
+            <button onclick="mudarAba('pro')" id="nav-btn-pro" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-crown text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Versão Pro</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Script de Lógica do Aplicativo -->
+    <script>
+        // Banco de Dados Pré-carregado INMETRO / Fabricantes Populares
+        const carrosBase = [
+            { nome: "VW Gol 1.6 8V", etanolCidade: 7.8, etanolEstrada: 9.5, gasCidade: 11.2, gasEstrada: 13.8, tanque: 55 },
+            { nome: "Chevrolet Onix 1.0 Turbo", etanolCidade: 9.4, etanolEstrada: 11.6, gasCidade: 13.5, gasEstrada: 16.7, tanque: 44 },
+            { nome: "Fiat Argo 1.0", etanolCidade: 9.3, etanolEstrada: 10.4, gasCidade: 13.3, gasEstrada: 14.7, tanque: 47 },
+            { nome: "Hyundai HB20 1.0", etanolCidade: 9.6, etanolEstrada: 10.4, gasCidade: 13.8, gasEstrada: 15.2, tanque: 50 },
+            { nome: "Toyota Corolla 2.0", etanolCidade: 7.8, etanolEstrada: 9.2, gasCidade: 11.1, gasEstrada: 13.3, tanque: 50 },
+            { nome: "Honda Civic 2.0", etanolCidade: 7.2, etanolEstrada: 8.9, gasCidade: 10.5, gasEstrada: 13.0, tanque: 56 },
+            { nome: "Jeep Renegade 1.3 Turbo", etanolCidade: 7.0, etanolEstrada: 8.4, gasCidade: 10.0, gasEstrada: 12.0, tanque: 55 },
+            { nome: "VW Nivus 200 TSI", etanolCidade: 8.3, etanolEstrada: 10.1, gasCidade: 12.1, gasEstrada: 14.8, tanque: 49 },
+            { nome: "Renault Kwid 1.0", etanolCidade: 10.8, etanolEstrada: 11.0, gasCidade: 15.3, gasEstrada: 15.7, tanque: 38 },
+            { nome: "Fiat Strada 1.3 Firefly", etanolCidade: 9.0, etanolEstrada: 10.0, gasCidade: 12.5, gasEstrada: 13.5, tanque: 55 }
+        ];
+
+        let veiculoAtual = {
+            nome: "VW Gol 1.6 8V",
+            etanol: 7.8,
+            gasolina: 11.2,
+            tanque: 55,
+            tipoConsumo: "inmetro"
+        };
+
+        let numPassageiros = 1;
+        let modoViagemAtual = "manual";
+        let isPro = false;
+
+        // Inicialização
+        window.onload = function() {
+            carregarGaragemSalva();
+            popularSelectCarros();
+        };
+
+        function popularSelectCarros() {
+            const select = document.getElementById('select-carro-base');
+            select.innerHTML = '<option value="">-- Escolha um modelo ou digite abaixo --</option>';
+            carrosBase.forEach((car, index) => {
+                let opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = car.nome;
+                select.appendChild(opt);
+            });
+        }
+
+        function selecionarCarroBase() {
+            const index = document.getElementById('select-carro-base').value;
+            if(index === "") return;
+            const car = carrosBase[index];
+            
+            document.getElementById('car-name').value = car.nome;
+            document.getElementById('car-etanol').value = car.etanolCidade;
+            document.getElementById('car-gas').value = car.gasCidade;
+            document.getElementById('car-tank').value = car.tanque;
+
+            veiculoAtual.nome = car.nome;
+            veiculoAtual.etanol = car.etanolCidade;
+            veiculoAtual.gasolina = car.gasCidade;
+            veiculoAtual.tanque = car.tanque;
+        }
+
+        function salvarVeiculo() {
+            const nome = document.getElementById('car-name').value || "Meu Veículo";
+            const etanol = parseFloat(document.getElementById('car-etanol').value) || 8.0;
+            const gas = parseFloat(document.getElementById('car-gas').value) || 12.0;
+            const tanque = parseInt(document.getElementById('car-tank').value) || 50;
+
+            veiculoAtual = { nome, etanol, gasolina: gas, tanque, tipoConsumo: veiculoAtual.tipoConsumo };
+            localStorage.setItem('autocalc_veiculo', JSON.stringify(veiculoAtual));
+
+            atualizarHeaderGaragem();
+            alert("Veículo salvo com sucesso na Garagem!");
+            mudarAba('combustivel');
+        }
+
+        function carregarGaragemSalva() {
+            const salvo = localStorage.getItem('autocalc_veiculo');
+            if(salvo) {
+                veiculoAtual = JSON.parse(salvo);
+                document.getElementById('car-name').value = veiculoAtual.nome;
+                document.getElementById('car-etanol').value = veiculoAtual.etanol;
+                document.getElementById('car-gas').value = veiculoAtual.gasolina;
+                document.getElementById('car-tank').value = veiculoAtual.tanque;
+            }
+            atualizarHeaderGaragem();
+        }
+
+        function atualizarHeaderGaragem() {
+            document.getElementById('header-car-info').textContent = `Garagem: ${veiculoAtual.nome} (${veiculoAtual.etanol} / ${veiculoAtual.gasolina} km/L)`;
+            document.getElementById('source-badge').textContent = veiculoAtual.tipoConsumo === 'inmetro' ? 'Dados Fábrica / INMETRO' : 'Média Personalizada';
+        }
+
+        function mudarModoConsumo(tipo) {
+            veiculoAtual.tipoConsumo = tipo;
+            const btnInmetro = document.getElementById('btn-cons-inmetro');
+            const btnCustom = document.getElementById('btn-cons-custom');
+            if(tipo === 'inmetro') {
+                btnInmetro.className = "flex-1 py-2 rounded-lg bg-accentYellow text-darkBg transition";
+                btnCustom.className = "flex-1 py-2 rounded-lg text-gray-400 transition";
+            } else {
+                btnCustom.className = "flex-1 py-2 rounded-lg bg-accentYellow text-darkBg transition";
+                btnInmetro.className = "flex-1 py-2 rounded-lg text-gray-400 transition";
+            }
+            atualizarHeaderGaragem();
+        }
+
+        // Navegação por Abas
+        function mudarAba(abaId) {
+            const abas = ['combustivel', 'viagem', 'garagem', 'pro'];
+            abas.forEach(aba => {
+                document.getElementById(`tab-${aba}`).classList.add('hidden');
+                document.getElementById(`nav-btn-${aba}`).className = "flex flex-col items-center text-gray-400 hover:text-gray-200 transition";
+            });
+            document.getElementById(`tab-${abaId}`).classList.remove('hidden');
+            
+            let activeColor = 'text-accentGreen';
+            if(abaId === 'viagem') activeColor = 'text-accentBlue';
+            if(abaId === 'garagem') activeColor = 'text-accentYellow';
+            if(abaId === 'pro') activeColor = 'text-amber-400';
+
+            document.getElementById(`nav-btn-${abaId}`).className = `flex flex-col items-center ${activeColor} transition`;
+        }
+
+        // Lógica de Cálculo de Combustível
+        function calcularCombustivel() {
+            const precoEtanol = parseFloat(document.getElementById('preco-etanol').value);
+            const precoGasolina = parseFloat(document.getElementById('preco-gasolina').value);
+
+            if(!precoEtanol || !precoGasolina) {
+                alert("Por favor, preencha os preços do Etanol e da Gasolina.");
+                return;
+            }
+
+            const custoKmEtanol = precoEtanol / veiculoAtual.etanol;
+            const custoKmGas = precoGasolina / veiculoAtual.gasolina;
+
+            document.getElementById('res-custo-etanol').textContent = `R$ ${custoKmEtanol.toFixed(2)}`;
+            document.getElementById('res-custo-gas').textContent = `R$ ${custoKmGas.toFixed(2)}`;
+
+            const vereditoTitulo = document.getElementById('veredito-titulo');
+            const vereditoSub = document.getElementById('veredito-sub');
+            const vereditoIcone = document.getElementById('veredito-icone');
+            const cardVeredito = document.getElementById('card-veredito');
+
+            const economiaTanque = Math.abs((custoKmGas - custoKmEtanol) * (veiculoAtual.tanque * 0.8));
+
+            if(custoKmEtanol < custoKmGas) {
+                cardVeredito.className = "p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/50 flex items-center space-x-3";
+                vereditoIcone.className = "bg-accentGreen text-darkBg w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0";
+                vereditoIcone.innerHTML = '<i class="fa-solid fa-check"></i>';
+                vereditoTitulo.textContent = "Compensa abastecer com ETANOL";
+                vereditoTitulo.className = "font-bold text-sm text-emerald-400";
+                vereditoSub.textContent = `Seu carro rende bem no álcool! Você economiza aprox. R$ ${economiaTanque.toFixed(2)} por tanque.`;
+            } else {
+                cardVeredito.className = "p-3 rounded-xl bg-blue-950/40 border border-blue-800/50 flex items-center space-x-3";
+                vereditoIcone.className = "bg-accentBlue text-darkBg w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0";
+                vereditoIcone.innerHTML = '<i class="fa-solid fa-check"></i>';
+                vereditoTitulo.textContent = "Compensa abastecer com GASOLINA";
+                vereditoTitulo.className = "font-bold text-sm text-blue-400";
+                vereditoSub.textContent = `A gasolina está mais vantajosa. Você economiza aprox. R$ ${economiaTanque.toFixed(2)} por tanque.`;
+            }
+
+            document.getElementById('resultado-combustivel').classList.remove('hidden');
+        }
+
+        // Lógica de Viagem & Rota
+        function mudarModoViagem(modo) {
+            modoViagemAtual = modo;
+            const btnManual = document.getElementById('btn-modo-manual');
+            const btnGps = document.getElementById('btn-modo-gps');
+            const blocoManual = document.getElementById('bloco-manual');
+            const blocoGps = document.getElementById('bloco-gps');
+
+            if(modo === 'manual') {
+                btnManual.className = "flex-1 py-2 rounded-lg bg-accentBlue text-white transition";
+                btnGps.className = "flex-1 py-2 rounded-lg text-gray-400 transition";
+                blocoManual.classList.remove('hidden');
+                blocoGps.classList.add('hidden');
+            } else {
+                btnGps.className = "flex-1 py-2 rounded-lg bg-accentBlue text-white transition";
+                btnManual.className = "flex-1 py-2 rounded-lg text-gray-400 transition";
+                blocoGps.classList.remove('hidden');
+                blocoManual.classList.add('hidden');
+            }
+        }
+
+        function usarMinhaLocalizacao() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    document.getElementById('viagem-origem').value = `Minha Localidade (${position.coords.latitude.toFixed(2)}, ${position.coords.longitude.toFixed(2)})`;
+                }, () => {
+                    alert("Não foi possível obter sua localização automática.");
+                });
+            } else {
+                alert("Geolocalização não suportada pelo seu dispositivo.");
+            }
+        }
+
+        function calcularRotaGPS() {
+            const origem = document.getElementById('viagem-origem').value;
+            const destino = document.getElementById('viagem-destino').value;
+            if(!origem || !destino) {
+                alert("Preencha origem e destino.");
+                return;
+            }
+            let distanciaSimulada = Math.floor(Math.random() * (350 - 60 + 1)) + 60;
+            document.getElementById('viagem-km').value = distanciaSimulada;
+            document.getElementById('viagem-pedagio').value = (distanciaSimulada * 0.18).toFixed(2);
+            mudarModoViagem('manual');
+            alert(`Rota calculada com sucesso! Distância estimada: ${distanciaSimulada} km.`);
+        }
+
+        function togglePedagio() {
+            const isento = document.getElementById('isento-pedagio').checked;
+            const inputPedagio = document.getElementById('viagem-pedagio');
+            if(isento) {
+                inputPedagio.value = "0.00";
+                inputPedagio.disabled = true;
+            } else {
+                inputPedagio.disabled = false;
+            }
+        }
+
+        function calcularViagem() {
+            const km = parseFloat(document.getElementById('viagem-km').value);
+            const tipoComb = document.getElementById('viagem-combustivel').value;
+            const pedagio = parseFloat(document.getElementById('viagem-pedagio').value) || 0;
+
+            const precoGas = parseFloat(document.getElementById('preco-gasolina').value) || 5.79;
+            const precoEtanol = parseFloat(document.getElementById('preco-etanol').value) || 3.89;
+
+            if(!km) {
+                alert("Informe a distância da viagem em quilômetros.");
+                return;
+            }
+
+            const consumoKm = tipoComb === 'gasolina' ? veiculoAtual.gasolina : veiculoAtual.etanol;
+            const precoLitro = tipoComb === 'gasolina' ? precoGas : precoEtanol;
+
+            const litrosGastos = km / consumoKm;
+            const custoCombustivel = litrosGastos * precoLitro;
+            const custoTotal = custoCombustivel + pedagio;
+
+            document.getElementById('res-viagem-litros').textContent = `${litrosGastos.toFixed(1)} L`;
+            document.getElementById('res-viagem-total').textContent = `R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById('resultado-viagem').classList.remove('hidden');
+
+            atualizarValorPessoa(custoTotal);
+        }
+
+        function mudarPassageiros(delta) {
+            numPassageiros += delta;
+            if(numPassageiros < 1) numPassageiros = 1;
+            document.getElementById('num-passageiros').textContent = numPassageiros;
+            
+            const totalStr = document.getElementById('res-viagem-total').textContent.replace('R$ ', '').replace(',', '.');
+            if(totalStr) {
+                atualizarValorPessoa(parseFloat(totalStr));
+            }
+        }
+
+        function atualizarValorPessoa(total) {
+            const porPessoa = total / numPassageiros;
+            document.getElementById('res-por-pessoa').textContent = `R$ ${porPessoa.toFixed(2)}`;
+        }
+
+        function fecharBanner(btn) {
+            btn.closest('#admob-banner').style.display = 'none';
+        }
+
+        function assistirVideoRecompensado() {
+            alert("Simulação de Vídeo Publicitário AdMob: Assistindo anúncio de 30 segundos...");
+            setTimeout(() => {
+                isPro = true;
+                document.getElementById('pro-badge').innerHTML = '<i class="fa-solid fa-crown text-yellow-400"></i> PRO Ativo';
+                document.getElementById('pro-badge').className = "bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 text-xs px-2.5 py-1 rounded-full font-semibold";
+                document.getElementById('admob-banner').style.display = 'none';
+                alert("Parabéns! Você ganhou 24 horas de acesso sem anúncios.");
+            }, 1500);
+        }
+
+        function toggleProMode() {
+            alert(isPro ? "Você está usando a versão Pro temporariamente!" : "Vá para a aba Versão Pro para ativar o modo sem anúncios.");
+        }
+
+        // Registro do Service Worker obrigatório para o PWABuilder
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registrado com sucesso!'))
+                .catch((err) => console.log('Erro ao registrar Service Worker:', err));
+        }
+    </script>
+</body>
+</html>
