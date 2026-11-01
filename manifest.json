@@ -1,15 +1,20 @@
 {
+  "id": "com.autocalc.pro",
   "name": "AutoCalc Pro",
   "short_name": "AutoCalc",
-  "start_url": "/",
+  "description": "Calculadora Automotiva Inteligente para consumo de combustível, custos de viagem e garagem.",
+  "start_url": "/autocalc-pro/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0b0f19",
   "theme_color": "#10b981",
+  "categories": ["utilities", "navigation", "finance"],
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2921/2921222.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
